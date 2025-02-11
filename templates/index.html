@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Classifier</title>
+    <link rel="stylesheet" type="text/css" href="static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>News Classifier</h1>
+        <form method="post" action="/predict">
+            <textarea name="text" placeholder="Enter news text"></textarea><br>
+            <button type="submit">Classify</button>
+        </form>
+        {% if category %}
+        <div class="result">
+            <h2>Category: {{ category }}</h2>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>News Classifier</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+</head>
+
+<body>
+    <h1>News Classifier</h1>
+    <form method="post" action="/predict">
+        <textarea name="text" placeholder="Enter news text"></textarea><br>
+        <button type="submit">Classify</button>
+    </form>
+    {% if category %}
+    <h2>Category: {{ category }}</h2>
+    {% endif %}
+</body>
+</html> -->
+
+
+
+
+
