@@ -1,14 +1,13 @@
 from fastapi import FastAPI, Request, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-import joblib
+import pickle
 import os
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import SVC
 
 app = FastAPI()
 
-#BASE_DIR = os.path.dirname(os.path.abdpath())
 # Setup Jinja2 templates
 templates = Jinja2Templates(directory="templates")
 
@@ -16,8 +15,8 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Define model & vectorizer file paths
-vectorizer_path = "models/tfidf_vectorizer.pkl"  # Changed to store in a "models" folder
-model_path = "models/best_svm_model.pkl"
+vectorizer_path = "models/tfidf_vectorizer.pkl"  # Updated filename (pickle version)
+model_path = "models/best_svm_model.pkl"  # Updated filename (pickle version)
 
 # Ensure both files exist before loading
 if not os.path.exists(model_path):
@@ -26,15 +25,23 @@ if not os.path.exists(model_path):
 if not os.path.exists(vectorizer_path):
     raise FileNotFoundError(f"🚨 Vectorizer file '{vectorizer_path}' not found!")
 
-# Load model and vectorizer
+# Load model and vectorizer using Pickle instead of Joblib
 try:
-    model = joblib.load(model_path)
-    vectorizer = joblib.load(vectorizer_path)
+    with open(model_path, "rb") as f:
+        model = pickle.load(f)
+        print(f"✅ Successfully loaded model from '{model_path}'")
+
+    with open(vectorizer_path, "rb") as f:
+        vectorizer = pickle.load(f)
+        print(f"✅ Successfully loaded vectorizer from '{vectorizer_path}'")
+
+except pickle.UnpicklingError:
+    raise RuntimeError("🚨 Error: Model/vectorizer file might be corrupted or saved in an incompatible format!")
 except Exception as e:
-    raise RuntimeError(f"🚨 Error loading model/vectorizer: {e}")
+    raise RuntimeError(f"🚨 Unexpected error while loading model/vectorizer: {e}")
 
 # Ensure correct object types
-if not hasattr(model, "predict"):  
+if not hasattr(model, "predict"):
     raise TypeError("🚨 Error: Loaded model does not have a 'predict' method!")
 
 if not isinstance(vectorizer, TfidfVectorizer):
@@ -48,39 +55,43 @@ def home(request: Request):
 # Prediction endpoint
 @app.post("/predict")
 async def predict(request: Request, text: str = Form(...)):
-    """Classify news article"""
+    """Classify input text using the SVM model"""
     text = text.strip()
 
-    if not text:  # Prevent empty input
+    if not text:
         return templates.TemplateResponse("index.html", {
             "request": request,
             "error": "Text cannot be empty!",
-            "category": None  # Ensure previous result clears
+            "category": None
         })
 
     try:
-        transformed_text = vectorizer.transform([text])  # Convert input text
+        # Transform input text using vectorizer
+        transformed_text = vectorizer.transform([text])
 
-        # Debugging print: Check transformed text
+        # Debugging: Check transformed text shape
         print(f"🔍 Transformed Text Shape: {transformed_text.shape}")
 
-        prediction = model.predict(transformed_text)[0]  # Get the prediction
+        # Get prediction
+        prediction = model.predict(transformed_text)[0]
 
-        # Debugging print: Check predicted category
+        # Debugging: Log prediction result
         print(f"✅ Predicted Category: {prediction}")
 
         return templates.TemplateResponse("index.html", {
             "request": request,
             "category": str(prediction),
-            "error": None  # Ensure previous errors clear
+            "error": None
         })
 
     except Exception as e:
+        print(f"⚠️ Prediction Error: {e}")  # Log error
         return templates.TemplateResponse("index.html", {
             "request": request,
             "error": f"🚨 Prediction Error: {str(e)}",
             "category": None
         })
+
 
 
 

@@ -1,53 +1,116 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>News Classifier</title>
-    <link rel="stylesheet" type="text/css" href="static/style.css">
+    <title>News Classification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        body {
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: linear-gradient(to right, #cb11cb, #a81fde);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 450px;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 16px;
+            resize: none;
+        }
+        button {
+            background: #2575fc;
+            color: white;
+            font-size: 18px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #1a5cc8;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #093f09;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>News Classifier</h1>
-        <form method="post" action="/predict">
-            <textarea name="text" placeholder="Enter news text"></textarea><br>
-            <button type="submit">Classify</button>
-        </form>
+        <h2>News Classification App</h2>
+        <textarea id="newsText" placeholder="Enter your news article here..."></textarea>
+        <button onclick="classifyNews()">Classify News</button>
+        
+    <script>
+        async function classifyNews() {
+            let newsText = document.getElementById("newsText").value.trim();
+            let resultDiv = document.getElementById("result");
+    
+            if (!newsText) {
+                resultDiv.innerHTML = "<p style='color: red;'>Please enter a news article!</p>";
+                return;
+            }
+    
+            // Create form data
+            let formData = new FormData();
+            formData.append("text", newsText);
+    
+            try {
+                let response = await fetch("/predict", {
+                    method: "POST",
+                    body: formData,
+                });
+    
+                let htmlResponse = await response.text();  // Get response as HTML
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(htmlResponse, "text/html");
+    
+                // Extract the new category result from the response
+                let newResult = doc.getElementById("result").innerHTML;
+    
+                // Update the result section without reloading the page
+                resultDiv.innerHTML = newResult;
+    
+            } catch (error) {
+                console.error("Error:", error);
+                resultDiv.innerHTML = "<p style='color: red;'>An error occurred while classifying the news.</p>";
+            }
+        }
+    </script>
+    
+    <div id="error">{% if error %}<p style="color: red;">{{ error }}</p>{% endif %}</div>
+    <div id="result">
         {% if category %}
-        <div class="result">
-            <h2>Category: {{ category }}</h2>
-        </div>
+            <h2>✅ Predicted Category: <span style="color: #008000;">{{ category }}</span></h2>
         {% endif %}
     </div>
+    <!-- <p id="result"></p> -->
+</div>
 </body>
 </html>
-
-
-
-
-
-
-<!-- <!DOCTYPE html>
-<html>
-<head>
-    <title>News Classifier</title>
-    <link rel="stylesheet" type="text/css" href="/static/style.css">
-</head>
-
-<body>
-    <h1>News Classifier</h1>
-    <form method="post" action="/predict">
-        <textarea name="text" placeholder="Enter news text"></textarea><br>
-        <button type="submit">Classify</button>
-    </form>
-    {% if category %}
-    <h2>Category: {{ category }}</h2>
-    {% endif %}
-</body>
-</html> -->
-
-
-
-
-
